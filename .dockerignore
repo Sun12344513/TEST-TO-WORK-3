@@ -1,0 +1,12 @@
+
+node_modules
+dist
+.git
+.github
+.aistudio
+.env
+.env.local
+.env.production
+*.zip
+*.log
+coverage
