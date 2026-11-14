@@ -7,7 +7,6 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# System dependencies: QEMU, desktop, RDP, ISO, networking and utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     qemu-system-x86 \
     qemu-utils \
@@ -44,34 +43,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node dependencies
-COPY package.json ./
+# Install Bun
+RUN npm install -g bun
 
-RUN npm install --no-audit --no-fund
+# Install dependencies
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 # Copy application source
 COPY . .
 
-# Build React/Vite frontend
-RUN npm run build
+# Build frontend
+RUN bun run build
 
-# Persistent VM data directories
+# Runtime directories
 RUN mkdir -p \
     /app/data/iso \
     /app/data/disks \
-    /app/data \
     /tmp \
     /run/dbus \
     /var/run/xrdp
 
-# Application port
 EXPOSE 3000
 
-# Persistent data: ISO images and virtual disks
 VOLUME ["/app/data"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["npm", "start"]
+CMD ["bun", "run", "start"]
